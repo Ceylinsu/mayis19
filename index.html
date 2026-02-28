@@ -3,36 +3,48 @@
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <meta charset="utf-8" />
-    <title>19 Mayıs AR Projesi</title>
+    <title>19 Mayıs AR - Hızlı Mod</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
     
     <style>
-      body { margin: 0; overflow: hidden; background-color: #000; font-family: sans-serif;}
-      /* Yükleme ekranı çubuğu */
-      #infoBar {
-        position: absolute; top: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8);
-        color: white; padding: 15px; text-align: center; z-index: 10001; font-size: 16px;
+      body { margin: 0; overflow: hidden; background-color: #000; font-family: sans-serif; }
+      #loadingOverlay {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+        background: #000; display: flex; flex-direction: column;
+        justify-content: center; align-items: center; z-index: 10000; color: white;
       }
       #startButton, #unmuteButton {
-        position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-        padding: 15px 30px; font-size: 18px; color: white; border: none; border-radius: 10px; z-index: 9999;
+        padding: 15px 30px; font-size: 18px; color: white; border: none; 
+        border-radius: 10px; cursor: pointer; z-index: 9999;
       }
-      #startButton { background-color: #e74c3c; display: none; } /* Başlangıçta gizli */
-      #unmuteButton { display: none; background-color: #27ae60; bottom: 90px; }
+      #startButton { background-color: #e74c3c; display: none; margin-top: 20px; }
+      #unmuteButton { display: none; background-color: #27ae60; position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); }
+      
+      /* Yükleme çemberi */
+      .loader {
+        border: 5px solid #f3f3f3; border-top: 5px solid #e74c3c;
+        border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;
+      }
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
   </head>
   <body>
-    <div id="infoBar">Lütfen Bekleyin... Sistem Yükleniyor.</div>
-    <button id="startButton">Kamerayı Başlat</button>
+
+    <div id="loadingOverlay">
+      <div class="loader"></div>
+      <p id="statusText">Sistem Hazırlanıyor...</p>
+      <button id="startButton">KAMERAYI BAŞLAT</button>
+    </div>
+
     <button id="unmuteButton">Sesi Aç 🔊</button>
 
-    <a-scene mindar-image="imageTargetSrc: resim_video/targets.mind; autoStart: false; uiLoading: no; uiScanning: yes;" 
+    <a-scene mindar-image="imageTargetSrc: resim_video/targets.mind; autoStart: false; uiLoading: no;" 
              embedded color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" 
              vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       
       <a-assets>
-        <video id="video-19mayis" src="resim_video/19mayis1.mp4" preload="auto" loop crossorigin="anonymous" playsinline webkit-playsinline muted></video>
+        <video id="video-19mayis" src="resim_video/19mayis1.mp4" preload="metadata" loop crossorigin="anonymous" playsinline webkit-playsinline muted></video>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
@@ -45,52 +57,48 @@
     <script>
       const sceneEl = document.querySelector('a-scene');
       const startButton = document.querySelector('#startButton');
+      const statusText = document.querySelector('#statusText');
+      const loadingOverlay = document.querySelector('#loadingOverlay');
       const unmuteButton = document.querySelector('#unmuteButton');
-      const infoBar = document.querySelector('#infoBar');
       const video = document.querySelector('#video-19mayis');
 
-      // 1. Kütüphaneler ve sistem tamamen hazır olduğunda
+      // 1. Sistem hazır olduğunda (Hızlandırma)
       sceneEl.addEventListener("arReady", () => {
-        infoBar.innerHTML = "Sistem Hazır! Butona Basın.";
-        startButton.style.display = "block"; // Başlat butonunu göster
+        statusText.innerHTML = "Sistem Hazır!";
+        document.querySelector('.loader').style.display = "none";
+        startButton.style.display = "block";
       });
 
-      // 2. Kamera izni verilmezse veya hata çıkarsa
-      sceneEl.addEventListener("arError", () => {
-        infoBar.innerHTML = "HATA: Kamera başlatılamadı. Lütfen izin verin.";
-        infoBar.style.color = "red";
-      });
-
-      // 3. Başlat butonuna tıklanınca
+      // 2. Butona basınca kamerayı aç
       startButton.addEventListener('click', () => {
+        loadingOverlay.style.display = "none";
         sceneEl.systems["mindar-image-system"].start();
-        startButton.style.display = 'none';
-        infoBar.innerHTML = "Atatürk Resmini Kameraya Gösterin";
+        // Videoyu arka planda hazırla
+        video.play().then(() => video.pause());
       });
 
-      // 4. Kamera resmi bulduğunda
+      // 3. Resim bulununca videoyu başlat
       const targetEntity = document.querySelector('[mindar-image-target]');
       targetEntity.addEventListener("targetFound", () => {
         video.play();
-        infoBar.style.display = "none"; // Üstteki yazıyı gizle
-        
-        // Video sessizse (Apple kuralı) sesi aç butonunu göster
-        if(video.muted) {
-            unmuteButton.style.display = 'block'; 
-        }
+        if(video.muted) unmuteButton.style.display = 'block'; 
       });
 
-      // 5. Kamera resmi kaybettiğinde
       targetEntity.addEventListener("targetLost", () => {
         video.pause();
-        unmuteButton.style.display = 'none';
       });
 
-      // 6. Kullanıcı "Sesi Aç" butonuna tıkladığında
       unmuteButton.addEventListener('click', () => {
         video.muted = false;
         unmuteButton.style.display = 'none';
       });
+
+      // Hata kontrolü: 10 saniye içinde açılmazsa uyarı ver
+      setTimeout(() => {
+        if (startButton.style.display === "none") {
+          statusText.innerHTML = "Dosya yolu hatalı veya internet çok yavaş.<br>Lütfen targets.mind dosyasını kontrol edin.";
+        }
+      }, 10000);
     </script>
   </body>
 </html>
