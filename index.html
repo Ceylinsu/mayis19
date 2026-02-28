@@ -3,61 +3,54 @@
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <meta charset="utf-8" />
-    <title>19 Mayıs AR - Hata Avcısı</title>
+    <title>19 Mayıs AR - Kesin Çözüm</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
     <style>
-      body { margin: 0; background: #111; color: white; font-family: sans-serif; text-align: center; }
-      #debugBox { position: absolute; top: 0; width: 100%; background: rgba(231, 76, 60, 0.9); z-index: 10002; padding: 10px; font-size: 14px; }
-      #startButton { display: none; margin-top: 100px; padding: 20px 40px; font-size: 20px; background: #27ae60; color: white; border: none; border-radius: 10px; }
+      body { margin: 0; background: #000; color: white; text-align: center; font-family: sans-serif; }
+      #btn { display: none; margin-top: 50%; padding: 20px; background: #e74c3c; border: none; color: white; border-radius: 10px; }
     </style>
   </head>
   <body>
+    <div id="loading">Sistem Kontrol Ediliyor...</div>
+    <button id="btn">KAMERAYI BAŞLAT</button>
 
-    <div id="debugBox">Sistem kontrol ediliyor...</div>
-    <button id="startButton">KAMERAYI BAŞLAT</button>
-
-    <a-scene mindar-image="imageTargetSrc: resim_video/targets.mind; autoStart: false; uiLoading: no;" 
-             embedded color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" 
-             vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-scene id="sahne" mindar-image="imageTargetSrc: resim_video/targets.mind?v=999; autoStart: false; uiLoading: no;" 
+             embedded vr-mode-ui="enabled: false">
       <a-assets>
-        <video id="video-19mayis" src="resim_video/19mayis1.mp4" preload="metadata" loop crossorigin="anonymous" playsinline webkit-playsinline muted></video>
+        <video id="vid" src="resim_video/19mayis1.mp4" preload="auto" loop playsinline webkit-playsinline muted></video>
       </a-assets>
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       <a-entity mindar-image-target="targetIndex: 0">
-        <a-video src="#video-19mayis" position="0 0 0" height="1" width="1.5"></a-video>
+        <a-video src="#vid" position="0 0 0" height="1" width="1.5"></a-video>
       </a-entity>
     </a-scene>
 
     <script>
-      const debug = document.getElementById('debugBox');
-      const startBtn = document.getElementById('startButton');
+      const sceneEl = document.querySelector('a-scene');
+      const loading = document.getElementById('loading');
+      const btn = document.getElementById('btn');
 
-      // 1. Dosyanın varlığını manuel kontrol et
-      fetch('resim_video/targets.mind')
-        .then(response => {
-          if (response.ok) {
-            debug.innerHTML = "✅ targets.mind bulundu! Sistem hazırlanıyor...";
-            debug.style.background = "#2980b9";
-          } else {
-            debug.innerHTML = "❌ HATA: 'resim_video/targets.mind' dosyası bulunamadı! <br> GitHub'daki klasör ismini kontrol et.";
-          }
-        })
-        .catch(() => debug.innerHTML = "❌ Bağlantı hatası!");
-
-      // 2. AR sistemi hazır olduğunda
-      document.querySelector('a-scene').addEventListener("arReady", () => {
-        debug.innerHTML = "🚀 SİSTEM HAZIR! Aşağıdaki butona basın.";
-        debug.style.background = "#27ae60";
-        startBtn.style.display = "inline-block";
+      // Sistem hazır olunca
+      sceneEl.addEventListener("arReady", () => {
+        loading.style.display = "none";
+        btn.style.display = "inline-block";
       });
 
-      startBtn.addEventListener('click', () => {
-        debug.style.display = "none";
-        document.querySelector('a-scene').systems["mindar-image-system"].start();
-        startBtn.style.display = "none";
+      // Hata olursa ekrana yaz
+      sceneEl.addEventListener("arError", () => {
+        loading.innerHTML = "HATA: Dosya bulunamadı!<br>Lütfen GitHub'daki klasör ve dosya ismini kontrol edin.";
+        loading.style.color = "red";
+      });
+
+      btn.addEventListener('click', () => {
+        btn.style.display = "none";
+        sceneEl.systems["mindar-image-system"].start();
+      });
+
+      document.querySelector('[mindar-image-target]').addEventListener("targetFound", () => {
+        document.getElementById('vid').play();
       });
     </script>
   </body>
 </html>
-
