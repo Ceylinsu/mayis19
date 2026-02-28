@@ -3,36 +3,26 @@
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <meta charset="utf-8" />
-    <title>19 Mayıs AR - Debug Mod</title>
+    <title>19 Mayıs AR - Hata Avcısı</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
     <style>
-      body { margin: 0; background: #000; color: #fff; font-family: sans-serif; text-align: center; }
-      #status { position: absolute; top: 20%; width: 100%; z-index: 10001; padding: 20px; box-sizing: border-box; }
-      #startButton { 
-        display: none; padding: 20px 40px; font-size: 20px; background: #e74c3c; 
-        color: white; border: none; border-radius: 10px; cursor: pointer; margin-top: 20px;
-      }
-      #unmuteButton { display: none; position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); padding: 15px 30px; background: #27ae60; color: white; border: none; border-radius: 10px; z-index: 9999; }
+      body { margin: 0; background: #111; color: white; font-family: sans-serif; text-align: center; }
+      #debugBox { position: absolute; top: 0; width: 100%; background: rgba(231, 76, 60, 0.9); z-index: 10002; padding: 10px; font-size: 14px; }
+      #startButton { display: none; margin-top: 100px; padding: 20px 40px; font-size: 20px; background: #27ae60; color: white; border: none; border-radius: 10px; }
     </style>
   </head>
   <body>
 
-    <div id="status">
-      <p id="msg">Sistem Yükleniyor...<br>(Eğer 10 saniyeden uzun sürerse dosyalar bulunamamıştır)</p>
-      <button id="startButton">KAMERAYI BAŞLAT</button>
-    </div>
+    <div id="debugBox">Sistem kontrol ediliyor...</div>
+    <button id="startButton">KAMERAYI BAŞLAT</button>
 
-    <button id="unmuteButton">Sesi Aç 🔊</button>
-
-    <a-scene mindar-image="imageTargetSrc: https://ceylinsu.github.io/mayis19/resim_video/targets.mind?v=1; autoStart: false; uiLoading: no;" 
+    <a-scene mindar-image="imageTargetSrc: resim_video/targets.mind; autoStart: false; uiLoading: no;" 
              embedded color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" 
              vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
-      
       <a-assets>
-        <video id="video-19mayis" src="https://ceylinsu.github.io/mayis19/resim_video/19mayis1.mp4?v=1" preload="metadata" loop crossorigin="anonymous" playsinline webkit-playsinline muted></video>
+        <video id="video-19mayis" src="resim_video/19mayis1.mp4" preload="metadata" loop crossorigin="anonymous" playsinline webkit-playsinline muted></video>
       </a-assets>
-
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       <a-entity mindar-image-target="targetIndex: 0">
         <a-video src="#video-19mayis" position="0 0 0" height="1" width="1.5"></a-video>
@@ -40,39 +30,34 @@
     </a-scene>
 
     <script>
-      const sceneEl = document.querySelector('a-scene');
-      const startButton = document.querySelector('#startButton');
-      const msg = document.querySelector('#msg');
-      const unmuteButton = document.querySelector('#unmuteButton');
-      const video = document.querySelector('#video-19mayis');
+      const debug = document.getElementById('debugBox');
+      const startBtn = document.getElementById('startButton');
 
-      // Sistem hazır olduğunda
-      sceneEl.addEventListener("arReady", () => {
-        msg.innerHTML = "SİSTEM HAZIR!";
-        startButton.style.display = "inline-block";
+      // 1. Dosyanın varlığını manuel kontrol et
+      fetch('resim_video/targets.mind')
+        .then(response => {
+          if (response.ok) {
+            debug.innerHTML = "✅ targets.mind bulundu! Sistem hazırlanıyor...";
+            debug.style.background = "#2980b9";
+          } else {
+            debug.innerHTML = "❌ HATA: 'resim_video/targets.mind' dosyası bulunamadı! <br> GitHub'daki klasör ismini kontrol et.";
+          }
+        })
+        .catch(() => debug.innerHTML = "❌ Bağlantı hatası!");
+
+      // 2. AR sistemi hazır olduğunda
+      document.querySelector('a-scene').addEventListener("arReady", () => {
+        debug.innerHTML = "🚀 SİSTEM HAZIR! Aşağıdaki butona basın.";
+        debug.style.background = "#27ae60";
+        startBtn.style.display = "inline-block";
       });
 
-      // Hata durumunda (Dosya bulunamazsa)
-      sceneEl.addEventListener("arError", (event) => {
-        msg.innerHTML = "HATA: Dosyalar yüklenemedi!<br>Lütfen GitHub klasör ismini kontrol edin.";
-        msg.style.color = "red";
-      });
-
-      startButton.addEventListener('click', () => {
-        document.getElementById('status').style.display = "none";
-        sceneEl.systems["mindar-image-system"].start();
-        video.play().then(() => video.pause()); // Videoyu önceden hazırla
-      });
-
-      document.querySelector('[mindar-image-target]').addEventListener("targetFound", () => {
-        video.play();
-        if(video.muted) unmuteButton.style.display = 'block'; 
-      });
-
-      unmuteButton.addEventListener('click', () => {
-        video.muted = false;
-        unmuteButton.style.display = 'none';
+      startBtn.addEventListener('click', () => {
+        debug.style.display = "none";
+        document.querySelector('a-scene').systems["mindar-image-system"].start();
+        startBtn.style.display = "none";
       });
     </script>
   </body>
 </html>
+
