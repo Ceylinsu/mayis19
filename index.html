@@ -3,24 +3,24 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <meta charset="utf-8" />
-    <title>19 Mayıs AR - Hızlı Versiyon</title>
+    <title>19 Mayıs AR - Hızlı Çözüm</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
     <style>
-        body { margin: 0; background: #000; color: white; font-family: sans-serif; text-align: center; overflow: hidden; }
-        #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        #startBtn { padding: 20px 40px; font-size: 20px; background: #e74c3c; color: white; border: none; border-radius: 12px; cursor: pointer; display: none; }
-        #status { margin-bottom: 20px; color: #aaa; font-size: 14px; }
+        body { margin: 0; background: #000; color: white; font-family: sans-serif; text-align: center; }
+        #statusBox { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; z-index: 10000; }
+        #startBtn { display: none; padding: 20px 40px; font-size: 18px; background: #e74c3c; color: white; border: none; border-radius: 12px; cursor: pointer; }
+        #msg { margin-bottom: 20px; font-size: 16px; }
     </style>
 </head>
 <body>
 
-    <div id="overlay">
-        <p id="status">Sistem Yükleniyor...</p>
-        <button id="startBtn">DENEYİMİ BAŞLAT</button>
+    <div id="statusBox">
+        <p id="msg">Dosyalar Kontrol Ediliyor...</p>
+        <button id="startBtn">KAMERAYI BAŞLAT</button>
     </div>
 
-    <a-scene mindar-image="imageTargetSrc: resim_video/targets.mind; autoStart: false; uiLoading: no; uiScanning: yes;" 
+    <a-scene mindar-image="imageTargetSrc: resim_video/targets.mind; autoStart: false; uiLoading: no;" 
              embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
         
         <a-assets>
@@ -28,7 +28,6 @@
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
         <a-entity mindar-image-target="targetIndex: 0">
             <a-video src="#arVideo" position="0 0 0" height="1" width="1.5"></a-video>
         </a-entity>
@@ -37,35 +36,35 @@
     <script>
         const sceneEl = document.querySelector('a-scene');
         const startBtn = document.getElementById('startBtn');
-        const status = document.getElementById('status');
+        const msg = document.getElementById('msg');
         const video = document.getElementById('arVideo');
 
-        // 1. Sistem hazır olduğunda butonu göster
+        // DOSYA KONTROLÜ: targets.mind dosyası gerçekten orada mı?
+        fetch('resim_video/targets.mind')
+            .then(response => {
+                if (response.ok) {
+                    msg.innerHTML = "Dosyalar bulundu. Sistem Hazır!";
+                } else {
+                    msg.innerHTML = "<span style='color:red;'>HATA: targets.mind dosyası bulunamadı!</span><br>Klasör veya dosya ismi yanlış.";
+                }
+            })
+            .catch(() => { msg.innerHTML = "Bağlantı hatası!"; });
+
+        // Sistem tamamen yüklendiğinde
         sceneEl.addEventListener("arReady", () => {
-            status.innerHTML = "Sistem Hazır! ✅";
-            startBtn.style.display = "block";
+            msg.style.display = "none";
+            startBtn.style.display = "inline-block";
         });
 
-        // 2. Butona basınca kamerayı ve videoyu "ısıt"
         startBtn.addEventListener('click', () => {
-            document.getElementById('overlay').style.display = "none";
+            document.getElementById('statusBox').style.display = "none";
             sceneEl.systems["mindar-image-system"].start();
-            // Android'de videonun hızlı açılması için gizli oynat-dur yapıyoruz
-            video.play().then(() => video.pause());
+            video.play().then(() => video.pause()); // Videoyu önceden ısıt
         });
 
-        // 3. Resim bulununca videoyu oynat
         document.querySelector('[mindar-image-target]').addEventListener("targetFound", () => {
             video.play();
         });
-
-        // Hata kontrolü (15 saniye içinde açılmazsa)
-        setTimeout(() => {
-            if (startBtn.style.display === "none") {
-                status.innerHTML = "Hata: Dosyalar yüklenemedi!<br>GitHub klasör adını (resim_video) ve dosya adını kontrol et.";
-                status.style.color = "#ff4444";
-            }
-        }, 15000);
     </script>
 </body>
 </html>
