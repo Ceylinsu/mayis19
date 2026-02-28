@@ -3,28 +3,28 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <meta charset="utf-8" />
-    <title>19 Mayıs AR - Hızlı Çözüm</title>
+    <title>19 Mayıs AR - Debug</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
     <style>
         body { margin: 0; background: #000; color: white; font-family: sans-serif; text-align: center; }
-        #statusBox { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; z-index: 10000; }
-        #startBtn { display: none; padding: 20px 40px; font-size: 18px; background: #e74c3c; color: white; border: none; border-radius: 12px; cursor: pointer; }
-        #msg { margin-bottom: 20px; font-size: 16px; }
+        #debugBox { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; z-index: 10000; }
+        .error { color: #ff4444; font-weight: bold; border: 2px solid #ff4444; padding: 20px; border-radius: 10px; }
+        #startBtn { display: none; padding: 20px 40px; font-size: 18px; background: #27ae60; color: white; border: none; border-radius: 12px; }
     </style>
 </head>
 <body>
 
-    <div id="statusBox">
-        <p id="msg">Dosyalar Kontrol Ediliyor...</p>
+    <div id="debugBox">
+        <p id="msg">Sistem Kontrol Ediliyor...</p>
         <button id="startBtn">KAMERAYI BAŞLAT</button>
     </div>
 
-    <a-scene mindar-image="imageTargetSrc: resim_video/targets.mind; autoStart: false; uiLoading: no;" 
-             embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-scene mindar-image="imageTargetSrc: ./resim_video/targets.mind; autoStart: false; uiLoading: no;" 
+             embedded vr-mode-ui="enabled: false">
         
         <a-assets>
-            <video id="arVideo" src="resim_video/video.mp4" preload="metadata" loop crossorigin="anonymous" playsinline webkit-playsinline muted></video>
+            <video id="arVideo" src="./resim_video/19mayis1.mp4" preload="auto" loop crossorigin="anonymous" playsinline webkit-playsinline muted></video>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
@@ -34,36 +34,33 @@
     </a-scene>
 
     <script>
-        const sceneEl = document.querySelector('a-scene');
-        const startBtn = document.getElementById('startBtn');
         const msg = document.getElementById('msg');
-        const video = document.getElementById('arVideo');
+        const startBtn = document.getElementById('startBtn');
 
-        // DOSYA KONTROLÜ: targets.mind dosyası gerçekten orada mı?
-        fetch('resim_video/targets.mind')
-            .then(response => {
-                if (response.ok) {
-                    msg.innerHTML = "Dosyalar bulundu. Sistem Hazır!";
+        // DOSYA VAR MI KONTROL ET
+        fetch('./resim_video/targets.mind')
+            .then(res => {
+                if (res.ok) {
+                    msg.innerHTML = "✅ targets.mind dosyası bulundu!";
                 } else {
-                    msg.innerHTML = "<span style='color:red;'>HATA: targets.mind dosyası bulunamadı!</span><br>Klasör veya dosya ismi yanlış.";
+                    msg.innerHTML = "<div class='error'>❌ HATA 404: 'resim_video/targets.mind' dosyası bulunamadı!<br><br>Lütfen GitHub'daki klasör ismini (resim_video) ve dosya adını kontrol edin.</div>";
                 }
             })
             .catch(() => { msg.innerHTML = "Bağlantı hatası!"; });
 
-        // Sistem tamamen yüklendiğinde
-        sceneEl.addEventListener("arReady", () => {
+        // SİSTEM HAZIR OLUNCA
+        document.querySelector('a-scene').addEventListener("arReady", () => {
             msg.style.display = "none";
             startBtn.style.display = "inline-block";
         });
 
         startBtn.addEventListener('click', () => {
-            document.getElementById('statusBox').style.display = "none";
-            sceneEl.systems["mindar-image-system"].start();
-            video.play().then(() => video.pause()); // Videoyu önceden ısıt
+            document.getElementById('debugBox').style.display = "none";
+            document.querySelector('a-scene').systems["mindar-image-system"].start();
         });
 
         document.querySelector('[mindar-image-target]').addEventListener("targetFound", () => {
-            video.play();
+            document.getElementById('arVideo').play();
         });
     </script>
 </body>
