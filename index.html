@@ -1,56 +1,68 @@
+
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <meta charset="utf-8" />
-    <title>19 Mayıs AR</title>
+    <title>19 Mayıs AR - Final</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
     <style>
-      body { margin: 0; background: #000; color: white; text-align: center; font-family: sans-serif; }
-      #loader { position: absolute; top: 40%; width: 100%; z-index: 10; }
-      #startBtn { display: none; padding: 20px 40px; font-size: 20px; background: #e74c3c; color: white; border: none; border-radius: 10px; margin-top: 20px; }
+        body { margin: 0; background: #000; color: white; font-family: sans-serif; text-align: center; }
+        #errorLog { position: absolute; top: 10px; width: 100%; z-index: 9999; color: #ff4444; font-weight: bold; }
+        #startBtn { display: none; margin-top: 50vh; transform: translateY(-50%); padding: 20px 40px; font-size: 20px; background: #27ae60; color: white; border: none; border-radius: 10px; }
     </style>
-  </head>
-  <body>
-    <div id="loader">
-      <p id="txt">Sistem Kontrol Ediliyor...</p>
-      <button id="startBtn">BAŞLAT</button>
-    </div>
+</head>
+<body>
+    <div id="errorLog">Sistem Kontrol Ediliyor...</div>
+    <button id="startBtn">KAMERAYI BAŞLAT</button>
 
-    <a-scene mindar-image="imageTargetSrc: ./resim_video/targets.mind?v=2; autoStart: false; uiLoading: no;" 
-             embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
-      <a-assets>
-        <video id="v" src="./resim_video/19mayis1.mp4" preload="auto" loop crossorigin="anonymous" playsinline webkit-playsinline muted></video>
-      </a-assets>
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-      <a-entity mindar-image-target="targetIndex: 0">
-        <a-video src="#v" position="0 0 0" height="1" width="1.5"></a-video>
-      </a-entity>
+    <a-scene mindar-image="imageTargetSrc: ./resim_video/hedef.mind; autoStart: false; uiLoading: no;" 
+             embedded vr-mode-ui="enabled: false">
+        <a-assets>
+            <video id="arVideo" src="./resim_video/video.mp4" preload="auto" loop crossorigin="anonymous" playsinline webkit-playsinline muted></video>
+        </a-assets>
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+        <a-entity mindar-image-target="targetIndex: 0">
+            <a-video src="#arVideo" position="0 0 0" height="1" width="1.5"></a-video>
+        </a-entity>
     </a-scene>
 
     <script>
-      const scene = document.querySelector('a-scene');
-      const txt = document.getElementById('txt');
-      const btn = document.getElementById('startBtn');
+        const scene = document.querySelector('a-scene');
+        const log = document.getElementById('errorLog');
+        const btn = document.getElementById('startBtn');
 
-      scene.addEventListener("arReady", () => {
-        txt.innerHTML = "Hazır!";
-        btn.style.display = "inline-block";
-      });
+        // Adım 1: Dosyalar gerçekten orada mı kontrol et
+        async function checkFiles() {
+            try {
+                const res = await fetch('./resim_video/hedef.mind');
+                if (!res.ok) throw new Error("hedef.mind dosyası bulunamadı!");
+                log.innerHTML = "Dosyalar bulundu, kütüphane yükleniyor...";
+            } catch (e) {
+                log.innerHTML = "HATA: " + e.message + "<br>GitHub klasör ismini ve dosya adını kontrol et!";
+            }
+        }
+        checkFiles();
 
-      scene.addEventListener("arError", () => {
-        txt.innerHTML = "Hata: targets.mind bulunamadı!<br>Lütfen GitHub'daki dosya ismini kontrol edin.";
-      });
+        scene.addEventListener("arReady", () => {
+            log.innerHTML = "SİSTEM HAZIR! ✅";
+            btn.style.display = "inline-block";
+        });
 
-      btn.addEventListener('click', () => {
-        document.getElementById('loader').style.display = "none";
-        scene.systems["mindar-image-system"].start();
-      });
+        scene.addEventListener("arError", () => {
+            log.innerHTML = "KAMERA HATASI! ❌ (İzin verilmedi veya tarayıcı uyumsuz)";
+        });
 
-      document.querySelector('[mindar-image-target]').addEventListener("targetFound", () => {
-        document.getElementById('v').play();
-      });
+        btn.addEventListener('click', () => {
+            log.style.display = "none";
+            btn.style.display = "none";
+            scene.systems["mindar-image-system"].start();
+        });
+
+        document.querySelector('[mindar-image-target]').addEventListener("targetFound", () => {
+            document.getElementById('arVideo').play();
+        });
     </script>
-  </body>
+</body>
 </html>
