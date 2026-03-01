@@ -1,104 +1,57 @@
+
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <meta charset="utf-8" />
-    <title>19 Mayıs AR - Hızlı Mod</title>
+    <title>19 Mayıs AR - Kesin Çözüm</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
-    
     <style>
-      body { margin: 0; overflow: hidden; background-color: #000; font-family: sans-serif; }
-      #loadingOverlay {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-        background: #000; display: flex; flex-direction: column;
-        justify-content: center; align-items: center; z-index: 10000; color: white;
-      }
-      #startButton, #unmuteButton {
-        padding: 15px 30px; font-size: 18px; color: white; border: none; 
-        border-radius: 10px; cursor: pointer; z-index: 9999;
-      }
-      #startButton { background-color: #e74c3c; display: none; margin-top: 20px; }
-      #unmuteButton { display: none; background-color: #27ae60; position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); }
-      
-      /* Yükleme çemberi */
-      .loader {
-        border: 5px solid #f3f3f3; border-top: 5px solid #e74c3c;
-        border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;
-      }
-      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { margin: 0; background: #000; color: white; text-align: center; font-family: sans-serif; }
+        #overlay { position: absolute; top: 0; width: 100%; height: 100%; background: #000; z-index: 10000; display: flex; flex-direction: column; justify-content: center; }
+        #startBtn { display: none; padding: 20px; background: #e74c3c; color: white; border: none; border-radius: 10px; margin: 20px; font-size: 18px; }
     </style>
-  </head>
-  <body>
-
-    <div id="loadingOverlay">
-      <div class="loader"></div>
-      <p id="statusText">Sistem Hazırlanıyor...</p>
-      <button id="startButton">KAMERAYI BAŞLAT</button>
+</head>
+<body>
+    <div id="overlay">
+        <p id="msg">Sistem Yükleniyor...</p>
+        <button id="startBtn">KAMERAYI AÇ</button>
     </div>
 
-    <button id="unmuteButton">Sesi Aç 🔊</button>
-
-    <a-scene mindar-image="imageTargetSrc: resim_video/targets.mind; autoStart: false; uiLoading: no;" 
-             embedded color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" 
-             vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
-      
-      <a-assets>
-        <video id="video-19mayis" src="resim_video/19mayis1.mp4" preload="metadata" loop crossorigin="anonymous" playsinline webkit-playsinline muted></video>
-      </a-assets>
-
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-      <a-entity mindar-image-target="targetIndex: 0">
-        <a-video src="#video-19mayis" position="0 0 0" height="1" width="1.5"></a-video>
-      </a-entity>
+    <a-scene mindar-image="imageTargetSrc: ./resim_video/targets.mind; autoStart: false; uiLoading: no;" 
+             embedded vr-mode-ui="enabled: false" renderer="preserveDrawingBuffer: true;">
+        <a-assets>
+            <video id="vid" src="./resim_video/19mayis1.mp4" preload="auto" loop crossorigin="anonymous" playsinline webkit-playsinline muted></video>
+        </a-assets>
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+        <a-entity mindar-image-target="targetIndex: 0">
+            <a-video src="#vid" position="0 0 0" height="1" width="1.5"></a-video>
+        </a-entity>
     </a-scene>
 
     <script>
-      const sceneEl = document.querySelector('a-scene');
-      const startButton = document.querySelector('#startButton');
-      const statusText = document.querySelector('#statusText');
-      const loadingOverlay = document.querySelector('#loadingOverlay');
-      const unmuteButton = document.querySelector('#unmuteButton');
-      const video = document.querySelector('#video-19mayis');
+        const scene = document.querySelector('a-scene');
+        const msg = document.getElementById('msg');
+        const btn = document.getElementById('startBtn');
 
-      // 1. Sistem hazır olduğunda (Hızlandırma)
-      sceneEl.addEventListener("arReady", () => {
-        statusText.innerHTML = "Sistem Hazır!";
-        document.querySelector('.loader').style.display = "none";
-        startButton.style.display = "block";
-      });
+        // Sistem dosyaları okuduğunda
+        scene.addEventListener("arReady", () => {
+            msg.innerHTML = "Dosyalar Hazır!";
+            btn.style.display = "inline-block";
+        });
 
-      // 2. Butona basınca kamerayı aç
-      startButton.addEventListener('click', () => {
-        loadingOverlay.style.display = "none";
-        sceneEl.systems["mindar-image-system"].start();
-        // Videoyu arka planda hazırla
-        video.play().then(() => video.pause());
-      });
+        btn.addEventListener('click', () => {
+            document.getElementById('overlay').style.display = "none";
+            // Sistemi manuel başlatmaya zorla
+            scene.systems["mindar-image-system"].start();
+        });
 
-      // 3. Resim bulununca videoyu başlat
-      const targetEntity = document.querySelector('[mindar-image-target]');
-      targetEntity.addEventListener("targetFound", () => {
-        video.play();
-        if(video.muted) unmuteButton.style.display = 'block'; 
-      });
-
-      targetEntity.addEventListener("targetLost", () => {
-        video.pause();
-      });
-
-      unmuteButton.addEventListener('click', () => {
-        video.muted = false;
-        unmuteButton.style.display = 'none';
-      });
-
-      // Hata kontrolü: 10 saniye içinde açılmazsa uyarı ver
-      setTimeout(() => {
-        if (startButton.style.display === "none") {
-          statusText.innerHTML = "Dosya yolu hatalı veya internet çok yavaş.<br>Lütfen targets.mind dosyasını kontrol edin.";
-        }
-      }, 10000);
+        // Resim bulununca videoyu oynat
+        document.querySelector('[mindar-image-target]').addEventListener("targetFound", () => {
+            document.getElementById('vid').play();
+        });
     </script>
-  </body>
+</body>
 </html>
+
